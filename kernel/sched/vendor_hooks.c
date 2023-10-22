@@ -125,7 +125,6 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_mmput);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_reweight_entity);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sca_migrate_same);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sched_move_task);
-EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sched_pelt_multiplier);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sched_setaffinity_early);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_scheduler_tick);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_scx_cpu_allowed);
