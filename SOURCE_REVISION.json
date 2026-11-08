@@ -1,0 +1,7 @@
+{
+  "ack_upstream_commit": "b97c15a2719d5904a1473d805c24887e2fb4c673",
+  "local_kernel_checkpoint": "7f9d3f1c3fa649befb6b898a97e719ee206ba6b0",
+  "vendor_checkpoint": "091cda432bafca30e830cda9444814a820404fb5",
+  "state": "r4: Android boot confirmed by user; lag, audio and heating unresolved",
+  "publication": "Complete kernel source snapshot with upstream revision recorded; original history retained locally"
+}

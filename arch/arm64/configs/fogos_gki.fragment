@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Motorola fogos, bangkk and rhodep (Qualcomm Blair, SM6375) on top of
+# gki_defconfig. The Qualcomm and Motorola drivers are built out of tree
+# against this kernel, so keep every exported symbol available to them.
+
+# Android parses the ACK branch and KMI generation out of the release.
+CONFIG_LOCALVERSION="-android17-6-sedona"
+# CONFIG_LOCALVERSION_AUTO is not set
+
+# CONFIG_TRIM_UNUSED_KSYMS is not set
+
+# Upstream drivers the fogos vendor_boot set loads as modules.
+# irq-qcom-mpm does not match the Blair MPM node (no qcom,mpm-pin-count),
+# so the Qualcomm qcom-mpm binds it, as on 6.1.
+CONFIG_QCOM_MPM=m
+CONFIG_HWSPINLOCK_QCOM=m
+CONFIG_NVMEM_SPMI_SDAM=m
+
+# Use ACK implementations for generic modules in the vendor_dlkm load list.
+CONFIG_CHR_DEV_SG=m
+CONFIG_SPI_SPIDEV=m
+CONFIG_NOP_USB_XCEIV=m
+CONFIG_USB_EHSET_TEST_FIXTURE=m
+CONFIG_TOUCHSCREEN_USB_COMPOSITE=m
+
+# The Qualcomm WLAN driver links against the current cfg80211 API.
+CONFIG_CFG80211=m
+CONFIG_MAC80211=m
+
+# Current vendor HAL uses APR hostless voice and vendor PCM ioctls.
+CONFIG_FOGOS_LEGACY_AUDIO=y
+
+# qcacld factory-test netlink interface used by the existing vendor stack.
+CONFIG_NL80211_TESTMODE=y
+
+CONFIG_INTERCONNECT_FOGOS_LEGACY=y
