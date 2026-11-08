@@ -21,3 +21,10 @@ claim that all peripherals or power management work.
 Publication uses a complete source snapshot because the local ACK object store
 contains 4.75 GiB of upstream history. Exact upstream and local checkpoint IDs
 are retained; the original full history remains in the local development repo.
+
+WALT port checkpoint r5 adds a GPL export of the existing
+arch_task_struct_size allocation size so the external WALT module can reject
+an undersized task allocation. No task_struct fields or scheduler structures
+are replaced. Required boot parameter: android_arch_task_struct_size=1280.
+The matching vendor module uses ACK scheduler hooks and the dynamic task tail.
+The Image and ACK modules compile; r5 device testing remains pending.
