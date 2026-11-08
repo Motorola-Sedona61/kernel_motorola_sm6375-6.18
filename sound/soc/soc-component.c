@@ -548,6 +548,28 @@ int snd_soc_component_compr_set_params(struct snd_compr_stream *cstream,
 }
 EXPORT_SYMBOL_GPL(snd_soc_component_compr_set_params);
 
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+int snd_soc_component_compr_set_next_track_param(struct snd_compr_stream *cstream,
+					union snd_codec_options *options)
+{
+	struct snd_soc_pcm_runtime *rtd = cstream->private_data;
+	struct snd_soc_component *component;
+	int i, ret;
+
+	for_each_rtd_components(rtd, i, component) {
+		if (component->driver->compress_ops &&
+		    component->driver->compress_ops->set_next_track_param) {
+			ret = component->driver->compress_ops->set_next_track_param(
+				component, cstream, options);
+			return soc_component_ret(component, ret);
+		}
+	}
+
+	return -ENOTTY;
+}
+EXPORT_SYMBOL_GPL(snd_soc_component_compr_set_next_track_param);
+#endif
+
 int snd_soc_component_compr_get_params(struct snd_compr_stream *cstream,
 				       struct snd_codec *params)
 {

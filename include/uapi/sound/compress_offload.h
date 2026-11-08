@@ -283,6 +283,10 @@ struct snd_compr_task_status {
 #define SNDRV_COMPRESS_NEXT_TRACK	_IO('C', 0x35)
 #define SNDRV_COMPRESS_PARTIAL_DRAIN	_IO('C', 0x36)
 
+/* Qualcomm APR gapless codec options used by the Fogos vendor HAL. */
+#define SNDRV_COMPRESS_SET_NEXT_TRACK_PARAM \
+	_IOW('C', 0x80, union snd_codec_options)
+
 
 #define SNDRV_COMPRESS_TASK_CREATE	_IOWR('C', 0x60, struct snd_compr_task)
 #define SNDRV_COMPRESS_TASK_FREE	_IOW('C', 0x61, __u64)

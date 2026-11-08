@@ -1018,6 +1018,24 @@ static int snd_compr_partial_drain(struct snd_compr_stream *stream)
 	return snd_compress_wait_for_drain(stream);
 }
 
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+static int snd_compr_set_next_track_param(struct snd_compr_stream *stream,
+					unsigned long arg)
+{
+	union snd_codec_options options;
+
+	if (stream->runtime->state != SNDRV_PCM_STATE_SETUP &&
+	    stream->runtime->state != SNDRV_PCM_STATE_RUNNING)
+		return -EPERM;
+	if (!stream->ops->set_next_track_param)
+		return -ENOTTY;
+	if (copy_from_user(&options, (void __user *)arg, sizeof(options)))
+		return -EFAULT;
+
+	return stream->ops->set_next_track_param(stream, &options);
+}
+#endif
+
 #if IS_ENABLED(CONFIG_SND_COMPRESS_ACCEL)
 
 static struct snd_compr_task_runtime *
@@ -1357,6 +1375,10 @@ static long snd_compr_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 		return snd_compr_partial_drain(stream);
 	case SNDRV_COMPRESS_NEXT_TRACK:
 		return snd_compr_next_track(stream);
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+	case SNDRV_COMPRESS_SET_NEXT_TRACK_PARAM:
+		return snd_compr_set_next_track_param(stream, arg);
+#endif
 	}
 
 	return -ENOTTY;

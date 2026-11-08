@@ -99,9 +99,11 @@ enum {
 	SNDRV_HWDEP_IFACE_LINE6,	/* Line6 USB processors */
 	SNDRV_HWDEP_IFACE_FW_MOTU,	/* MOTU FireWire series */
 	SNDRV_HWDEP_IFACE_FW_FIREFACE,	/* RME Fireface series */
+	SNDRV_HWDEP_IFACE_AUDIO_BE = 27, /* Fogos backend audio control */
+	SNDRV_HWDEP_IFACE_AUDIO_CODEC = 28, /* Fogos codec calibration */
 
 	/* Don't forget to change the following: */
-	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_FW_FIREFACE
+	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_AUDIO_CODEC
 };
 
 struct snd_hwdep_info {

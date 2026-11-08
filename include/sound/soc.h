@@ -1594,4 +1594,13 @@ static inline void _snd_soc_dpcm_mutex_assert_held_r(struct snd_soc_pcm_runtime 
 #include <sound/soc-card.h>
 #include <sound/soc-jack.h>
 
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+static inline void snd_soc_card_change_online_state(struct snd_soc_card *card,
+						    int online)
+{
+	if (card && card->snd_card)
+		snd_card_change_online_state(card->snd_card, online);
+}
+#endif
+
 #endif

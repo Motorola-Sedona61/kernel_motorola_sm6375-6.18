@@ -503,6 +503,14 @@ static int soc_compr_get_metadata(struct snd_compr_stream *cstream,
 	return snd_soc_component_compr_get_metadata(cstream, metadata);
 }
 
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+static int soc_compr_set_next_track_param(struct snd_compr_stream *cstream,
+					union snd_codec_options *options)
+{
+	return snd_soc_component_compr_set_next_track_param(cstream, options);
+}
+#endif
+
 /* ASoC Compress operations */
 static struct snd_compr_ops soc_compr_ops = {
 	.open		= soc_compr_open,
@@ -516,6 +524,9 @@ static struct snd_compr_ops soc_compr_ops = {
 	.ack		= soc_compr_ack,
 	.get_caps	= snd_soc_component_compr_get_caps,
 	.get_codec_caps = snd_soc_component_compr_get_codec_caps,
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+	.set_next_track_param = soc_compr_set_next_track_param,
+#endif
 };
 
 /* ASoC Dynamic Compress operations */
@@ -531,6 +542,9 @@ static struct snd_compr_ops soc_compr_dyn_ops = {
 	.ack		= soc_compr_ack,
 	.get_caps	= snd_soc_component_compr_get_caps,
 	.get_codec_caps = snd_soc_component_compr_get_codec_caps,
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+	.set_next_track_param = soc_compr_set_next_track_param,
+#endif
 };
 
 /**

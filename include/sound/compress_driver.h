@@ -175,6 +175,11 @@ struct snd_compr_ops {
 			struct snd_compr_caps *caps);
 	int (*get_codec_caps) (struct snd_compr_stream *stream,
 			struct snd_compr_codec_caps *codec);
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+	/* Qualcomm APR gapless codec options, retained from the 6.1 HAL ABI. */
+	int (*set_next_track_param)(struct snd_compr_stream *stream,
+			union snd_codec_options *codec_options);
+#endif
 #if IS_ENABLED(CONFIG_SND_COMPRESS_ACCEL)
 	int (*task_create) (struct snd_compr_stream *stream, struct snd_compr_task_runtime *task);
 	int (*task_start) (struct snd_compr_stream *stream, struct snd_compr_task_runtime *task);

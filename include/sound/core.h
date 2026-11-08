@@ -132,6 +132,11 @@ struct snd_card {
 	bool releasing;			/* during card free process */
 	int sync_irq;			/* assigned irq, used for PCM sync */
 	wait_queue_head_t remove_sleep;
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+	int offline;
+	unsigned long offline_change;
+	wait_queue_head_t offline_poll_wait;
+#endif
 
 	size_t total_pcm_alloc_bytes;	/* total amount of allocated buffers */
 	struct mutex memory_mutex;	/* protection for the above */
@@ -456,5 +461,9 @@ int snd_fasync_helper(int fd, struct file *file, int on,
 		      struct snd_fasync **fasyncp);
 void snd_kill_fasync(struct snd_fasync *fasync, int signal, int poll);
 void snd_fasync_free(struct snd_fasync *fasync);
+#if IS_ENABLED(CONFIG_FOGOS_LEGACY_AUDIO)
+void snd_card_change_online_state(struct snd_card *card, int online);
+bool snd_card_is_online_state(struct snd_card *card);
+#endif
 
 #endif /* __SOUND_CORE_H */
