@@ -113,6 +113,20 @@ void serial_base_port_shutdown(struct uart_port *port)
 	serial_base_port_set_tx(port, port_dev, false);
 }
 
+/**
+ * uart_port_set_pm_autosuspend_delay - tune serial core port idle delay
+ * @port: registered UART port
+ * @delay: autosuspend delay in milliseconds
+ *
+ * Call after uart_add_one_port(). Drivers with their own hardware idle delay
+ * can avoid holding the physical controller active for an additional interval.
+ */
+void uart_port_set_pm_autosuspend_delay(struct uart_port *port, int delay)
+{
+	pm_runtime_set_autosuspend_delay(&port->port_dev->dev, delay);
+}
+EXPORT_SYMBOL_GPL(uart_port_set_pm_autosuspend_delay);
+
 static DEFINE_RUNTIME_DEV_PM_OPS(serial_port_pm,
 				 serial_port_runtime_suspend,
 				 serial_port_runtime_resume, NULL);
