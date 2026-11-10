@@ -144,6 +144,10 @@ static void __uart_start(struct uart_state *state)
 		return;
 
 	port_dev = port->port_dev;
+	if (READ_ONCE(port_dev->driver_managed_pm)) {
+		port->ops->start_tx(port);
+		return;
+	}
 
 	/* Increment the runtime PM usage count for the active check below */
 	err = pm_runtime_get(&port_dev->dev);

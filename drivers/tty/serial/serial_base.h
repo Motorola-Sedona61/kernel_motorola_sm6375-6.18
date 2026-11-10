@@ -23,6 +23,7 @@ struct serial_port_device {
 	struct device dev;
 	struct uart_port *port;
 	unsigned int tx_enabled:1;
+	bool driver_managed_pm;
 };
 
 int serial_base_ctrl_init(void);

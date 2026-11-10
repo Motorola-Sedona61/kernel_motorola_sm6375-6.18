@@ -114,18 +114,18 @@ void serial_base_port_shutdown(struct uart_port *port)
 }
 
 /**
- * uart_port_set_pm_autosuspend_delay - tune serial core port idle delay
- * @port: registered UART port
- * @delay: autosuspend delay in milliseconds
+ * uart_port_use_driver_managed_pm - retain a UART driver's own runtime PM
+ * @port: registered UART port, before it is opened
  *
- * Call after uart_add_one_port(). Drivers with their own hardware idle delay
- * can avoid holding the physical controller active for an additional interval.
+ * Drivers which manage physical-device votes and deferred TX themselves must
+ * not also queue TX through serial_port_runtime_resume(). The serial-core
+ * child remains suspended; physical-device runtime PM is still driver-owned.
  */
-void uart_port_set_pm_autosuspend_delay(struct uart_port *port, int delay)
+void uart_port_use_driver_managed_pm(struct uart_port *port)
 {
-	pm_runtime_set_autosuspend_delay(&port->port_dev->dev, delay);
+	WRITE_ONCE(port->port_dev->driver_managed_pm, true);
 }
-EXPORT_SYMBOL_GPL(uart_port_set_pm_autosuspend_delay);
+EXPORT_SYMBOL_GPL(uart_port_use_driver_managed_pm);
 
 static DEFINE_RUNTIME_DEV_PM_OPS(serial_port_pm,
 				 serial_port_runtime_suspend,
