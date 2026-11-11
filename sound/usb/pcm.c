@@ -662,6 +662,29 @@ static int lowlatency_playback_available(struct snd_pcm_runtime *runtime,
 	return true;
 }
 
+/* Caller holds the shutdown lock and has configured the endpoint parameters. */
+int snd_usb_prepare_endpoints(struct snd_usb_substream *subs)
+{
+	struct snd_usb_audio *chip = subs->stream->chip;
+	int ret;
+
+	if (!subs->data_endpoint)
+		return -EINVAL;
+	if (subs->sync_endpoint) {
+		ret = snd_usb_endpoint_prepare(chip, subs->sync_endpoint);
+		if (ret < 0)
+			return ret;
+	}
+
+	ret = snd_usb_endpoint_prepare(chip, subs->data_endpoint);
+	if (ret < 0)
+		return ret;
+	if (ret > 0)
+		snd_usb_set_format_quirk(subs, subs->cur_audiofmt);
+	return 0;
+}
+EXPORT_SYMBOL_GPL(snd_usb_prepare_endpoints);
+
 /*
  * prepare callback
  *
@@ -686,18 +709,9 @@ static int snd_usb_pcm_prepare(struct snd_pcm_substream *substream)
 		return ret;
 
  again:
-	if (subs->sync_endpoint) {
-		ret = snd_usb_endpoint_prepare(chip, subs->sync_endpoint);
-		if (ret < 0)
-			return ret;
-	}
-
-	ret = snd_usb_endpoint_prepare(chip, subs->data_endpoint);
+	ret = snd_usb_prepare_endpoints(subs);
 	if (ret < 0)
 		return ret;
-	else if (ret > 0)
-		snd_usb_set_format_quirk(subs, subs->cur_audiofmt);
-	ret = 0;
 
 	/* reset the pointer */
 	subs->buffer_bytes = frames_to_bytes(runtime, runtime->buffer_size);
