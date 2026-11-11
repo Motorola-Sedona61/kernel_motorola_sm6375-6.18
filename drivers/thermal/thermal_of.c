@@ -95,6 +95,8 @@ static int thermal_of_populate_trip(struct device_node *np,
 
 static struct thermal_trip *thermal_of_trips_init(struct device_node *np, int *ntrips)
 {
+	const char *governor;
+	bool userspace_hyst;
 	int ret, count;
 
 	*ntrips = 0;
@@ -111,11 +113,24 @@ static struct thermal_trip *thermal_of_trips_init(struct device_node *np, int *n
 	if (!tt)
 		return ERR_PTR(-ENOMEM);
 
+	/*
+	 * Legacy Android thermal daemons program both ends of the monitoring
+	 * window on zones explicitly assigned to user space in the vendor DT.
+	 * Keep their noncritical hysteresis writable through the native core.
+	 */
+	userspace_hyst = !of_property_read_string(np, "thermal-governor", &governor) &&
+			 !strcmp(governor, "user_space");
+
 	count = 0;
 	for_each_child_of_node_scoped(trips, trip) {
-		ret = thermal_of_populate_trip(trip, &tt[count++]);
+		ret = thermal_of_populate_trip(trip, &tt[count]);
 		if (ret)
 			return ERR_PTR(ret);
+		if (userspace_hyst &&
+		    (tt[count].type == THERMAL_TRIP_ACTIVE ||
+		     tt[count].type == THERMAL_TRIP_PASSIVE))
+			tt[count].flags |= THERMAL_TRIP_FLAG_RW_HYST;
+		count++;
 	}
 
 	*ntrips = count;
