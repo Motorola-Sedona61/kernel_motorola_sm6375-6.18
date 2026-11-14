@@ -99,6 +99,9 @@ typedef int __bitwise fpi_t;
 /* Free the page without taking locks. Rely on trylock only. */
 #define FPI_TRYLOCK		((__force fpi_t)BIT(2))
 
+/* Allocations in the slow path that are waiting on kswapd to free pages */
+atomic_long_t kswapd_waiters = ATOMIC_LONG_INIT(0);
+
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
 #define MIN_PERCPU_PAGELIST_HIGH_FRACTION (8)
@@ -5075,6 +5078,7 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	u64 stime = 0;
 	bool should_alloc_retry = false;
 	unsigned long direct_reclaim_retries = 0;
+	bool woke_kswapd = false;
 
 	if (unlikely(nofail)) {
 		/*
@@ -5135,8 +5139,13 @@ restart:
 			goto nopage;
 	}
 
-	if (alloc_flags & ALLOC_KSWAPD)
+	if (alloc_flags & ALLOC_KSWAPD) {
+		if (!woke_kswapd) {
+			atomic_long_inc(&kswapd_waiters);
+			woke_kswapd = true;
+		}
 		wake_all_kswapds(order, gfp_mask, ac);
+	}
 
 	if (can_direct_reclaim && !direct_reclaim_retries && !(current->flags & PF_MEMALLOC))
 		trace_android_rvh_alloc_pages_reclaim_start(gfp_mask, order, &alloc_flags);
@@ -5395,6 +5404,8 @@ fail:
 	warn_alloc(gfp_mask, ac->nodemask,
 			"page allocation failure: order:%u", order);
 got_pg:
+	if (woke_kswapd)
+		atomic_long_dec(&kswapd_waiters);
 	trace_android_vh_alloc_pages_slowpath_end(&gfp_mask, order, alloc_start,
 			stime, did_some_progress, pages_reclaimed, retry_loop_count);
 	return page;
