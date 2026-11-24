@@ -166,6 +166,23 @@ void topology_set_freq_scale(const struct cpumask *cpus, unsigned long cur_freq,
 		per_cpu(arch_freq_scale, i) = scale;
 }
 
+DEFINE_PER_CPU(unsigned long, arch_min_freq_scale);
+
+void topology_set_min_freq_scale(const struct cpumask *cpus,
+				 unsigned long min_freq, unsigned long max_freq)
+{
+	int cpu;
+
+	if (WARN_ON_ONCE(!max_freq))
+		return;
+
+	for_each_cpu(cpu, cpus)
+		WRITE_ONCE(per_cpu(arch_min_freq_scale, cpu),
+			   mult_frac(topology_get_cpu_scale(cpu), min_freq, max_freq));
+}
+EXPORT_SYMBOL_GPL(topology_set_min_freq_scale);
+EXPORT_PER_CPU_SYMBOL_GPL(arch_min_freq_scale);
+
 DEFINE_PER_CPU(unsigned long, hw_pressure);
 EXPORT_PER_CPU_SYMBOL_GPL(hw_pressure);
 
