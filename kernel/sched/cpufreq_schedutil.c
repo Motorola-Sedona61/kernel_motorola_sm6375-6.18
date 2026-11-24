@@ -229,8 +229,9 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 				  unsigned long util, unsigned long max)
 {
 	struct cpufreq_policy *policy = sg_policy->policy;
-	unsigned int freq;
+	unsigned int freq, lower, upper, min_freq, max_freq;
 	unsigned long next_freq = 0;
+	int index;
 
 	freq = get_capacity_ref_freq(policy);
 	trace_android_vh_map_util_freq(util, freq, max, &next_freq, policy,
@@ -244,7 +245,29 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 		return sg_policy->next_freq;
 
 	sg_policy->cached_raw_freq = freq;
-	return cpufreq_driver_resolve_freq(policy, freq);
+	upper = cpufreq_driver_resolve_freq(policy, freq);
+	if (next_freq || !policy->freq_table || freq >= upper)
+		return upper;
+
+	min_freq = READ_ONCE(policy->min);
+	max_freq = READ_ONCE(policy->max);
+	if (min_freq > max_freq)
+		return upper;
+
+	index = cpufreq_frequency_table_target(policy, freq, min_freq, max_freq,
+					       CPUFREQ_RELATION_H);
+	if (index < 0)
+		return upper;
+
+	lower = policy->freq_table[index].frequency;
+	if (lower < min_freq || lower > freq || lower >= upper)
+		return upper;
+
+	/* Stay at the lower OPP when the target is less than 20% of a step away. */
+	if (mult_frac(freq - lower, 100U, upper - lower) < 20)
+		return cpufreq_driver_resolve_freq(policy, lower);
+
+	return upper;
 }
 
 unsigned long sugov_effective_cpu_perf(int cpu, unsigned long actual,
