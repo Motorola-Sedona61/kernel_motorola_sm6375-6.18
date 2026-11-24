@@ -138,7 +138,8 @@ static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
 		 * specifically wants that to happen on every update of the
 		 * policy limits.
 		 */
-		if (cpufreq_driver_test_flags(CPUFREQ_NEED_UPDATE_LIMITS))
+		if (next_freq != sg_policy->next_freq ||
+		    cpufreq_driver_test_flags(CPUFREQ_NEED_UPDATE_LIMITS))
 			goto must_update;
 	}
 
@@ -153,10 +154,13 @@ static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
 	 * systems. A check for arch_scale_freq_invariant() is omitted here
 	 * because unconditionally rechecking the rate limit is cheaper.
 	 */
-	if (next_freq == sg_policy->next_freq ||
-	    (next_freq < sg_policy->next_freq &&
-	     sugov_should_rate_limit(sg_policy, time)))
+	if (next_freq == sg_policy->next_freq)
 		return false;
+	if (next_freq < sg_policy->next_freq && sugov_should_rate_limit(sg_policy, time)) {
+		/* Re-resolve this target once the rate limit expires. */
+		sg_policy->cached_raw_freq = UINT_MAX;
+		return false;
+	}
 
 must_update:
 	sg_policy->next_freq = next_freq;
