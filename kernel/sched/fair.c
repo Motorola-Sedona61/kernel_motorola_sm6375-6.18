@@ -13079,9 +13079,11 @@ static void _nohz_idle_balance(struct rq *this_rq, unsigned int flags)
 
 	/*
 	 * Start with the next CPU after this_cpu so we will end with this_cpu and let a
-	 * chance for other idle cpu to pull load.
+	 * chance for other idle CPUs to pull load. CASS balances in ascending
+	 * CPU order.
 	 */
-	for_each_cpu_wrap(balance_cpu,  nohz.idle_cpus_mask, this_cpu+1) {
+	for_each_cpu_wrap(balance_cpu, nohz.idle_cpus_mask,
+			  IS_ENABLED(CONFIG_SCHED_CASS) ? 0 : this_cpu + 1) {
 		if (!idle_cpu(balance_cpu))
 			continue;
 
