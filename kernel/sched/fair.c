@@ -12043,7 +12043,7 @@ static int need_active_balance(struct lb_env *env)
 	 * because of other sched_class or IRQs if more capacity stays
 	 * available on dst_cpu.
 	 */
-	if (env->idle &&
+	if (!IS_ENABLED(CONFIG_SCHED_CASS) && env->idle &&
 	    (env->src_rq->cfs.h_nr_runnable == 1)) {
 		if ((check_cpu_capacity(env->src_rq, sd)) &&
 		    (capacity_of(env->src_cpu)*sd->imbalance_pct < capacity_of(env->dst_cpu)*100))
@@ -12840,7 +12840,7 @@ static void nohz_balancer_kick(struct rq *rq)
 	rcu_read_lock();
 
 	sd = rcu_dereference(rq->sd);
-	if (sd) {
+	if (!IS_ENABLED(CONFIG_SCHED_CASS) && sd) {
 		/*
 		 * If there's a runnable CFS task and the current CPU has reduced
 		 * capacity, kick the ILB to see if there's a better CPU to run on:
