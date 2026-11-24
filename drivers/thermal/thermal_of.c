@@ -246,6 +246,9 @@ static struct device_node *thermal_of_zone_get_by_name(struct thermal_zone_devic
 		return ERR_PTR(-ENODEV);
 
 	tz_np = of_get_child_by_name(np, tz->type);
+	if (!tz_np && of_machine_is_compatible("qcom,blair") &&
+	    !strcmp(tz->type, "quiet-therm"))
+		tz_np = of_get_child_by_name(np, "quiet_therm");
 
 	of_node_put(np);
 
@@ -387,7 +390,7 @@ static struct thermal_zone_device *thermal_of_zone_register(struct device_node *
 	struct thermal_trip *trips;
 	struct thermal_zone_params tzp = {};
 	struct device_node *np;
-	const char *action;
+	const char *action, *name;
 	int delay, pdelay;
 	int ntrips;
 	int ret;
@@ -427,7 +430,12 @@ static struct thermal_zone_device *thermal_of_zone_register(struct device_node *
 			of_ops.critical = thermal_zone_device_critical_shutdown;
 	}
 
-	tz = thermal_zone_device_register_with_trips(np->name, trips, ntrips,
+	/* Accept the old Motorola overlay while exposing the 6.1 zone name. */
+	name = np->name;
+	if (of_machine_is_compatible("qcom,blair") && !strcmp(name, "quiet_therm"))
+		name = "quiet-therm";
+
+	tz = thermal_zone_device_register_with_trips(name, trips, ntrips,
 						     data, &of_ops, &tzp,
 						     pdelay, delay);
 	if (IS_ERR(tz)) {
