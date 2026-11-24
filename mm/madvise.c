@@ -23,6 +23,7 @@
 #include <linux/mm_inline.h>
 #include <linux/mmu_context.h>
 #include <linux/string.h>
+#include <linux/uaccess.h>
 #include <linux/uio.h>
 #include <linux/ksm.h>
 #include <linux/fs.h>
@@ -2241,21 +2242,22 @@ int set_anon_vma_name(unsigned long addr, unsigned long size,
 	bool bypass = false;
 
 	if (uname) {
-		char *name, *pch;
+		char name[ANON_VMA_NAME_MAX_LEN];
+		char *pch;
+		long len;
 
-		name = strndup_user(uname, ANON_VMA_NAME_MAX_LEN);
-		if (IS_ERR(name))
-			return PTR_ERR(name);
+		len = strncpy_from_user(name, uname, sizeof(name));
+		if (len < 0)
+			return len;
+		if (len == sizeof(name))
+			return -EINVAL;
 
 		for (pch = name; *pch != '\0'; pch++) {
-			if (!is_valid_name_char(*pch)) {
-				kfree(name);
+			if (!is_valid_name_char(*pch))
 				return -EINVAL;
-			}
 		}
 		/* anon_vma has its own copy */
 		anon_name = anon_vma_name_alloc(name);
-		kfree(name);
 		if (!anon_name)
 			return -ENOMEM;
 	}
