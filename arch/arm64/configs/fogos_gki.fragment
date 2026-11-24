@@ -8,6 +8,7 @@ CONFIG_LOCALVERSION="-android17-6-sedona"
 # CONFIG_LOCALVERSION_AUTO is not set
 
 # CONFIG_TRIM_UNUSED_KSYMS is not set
+CONFIG_NR_CPUS=8
 
 # Upstream drivers the fogos vendor_boot set loads as modules.
 # irq-qcom-mpm does not match the Blair MPM node (no qcom,mpm-pin-count),
