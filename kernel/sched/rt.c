@@ -2773,6 +2773,7 @@ static int task_is_throttled_rt(struct task_struct *p, int cpu)
 }
 #endif /* CONFIG_SCHED_CORE */
 
+#include "cass_rt.h"
 DEFINE_SCHED_CLASS(rt) = {
 
 	.queue_mask		= 4,
