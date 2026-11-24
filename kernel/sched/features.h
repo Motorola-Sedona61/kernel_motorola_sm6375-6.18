@@ -44,7 +44,11 @@ SCHED_FEAT(PICK_BUDDY, true)
  * Consider buddies to be cache hot, decreases the likeliness of a
  * cache buddy being migrated away, increases cache locality.
  */
-SCHED_FEAT(CACHE_HOT_BUDDY, !IS_ENABLED(CONFIG_SCHED_CASS))
+#ifdef CONFIG_SCHED_CASS
+SCHED_FEAT(CACHE_HOT_BUDDY, false)
+#else
+SCHED_FEAT(CACHE_HOT_BUDDY, true)
+#endif
 
 /*
  * Delay dequeueing tasks until they get selected or woken.
@@ -71,7 +75,7 @@ SCHED_FEAT(HRTICK_DL, false)
  */
 SCHED_FEAT(NONTASK_CAPACITY, true)
 
-#ifdef CONFIG_PREEMPT_RT
+#if defined(CONFIG_PREEMPT_RT) || defined(CONFIG_SCHED_CASS)
 SCHED_FEAT(TTWU_QUEUE, false)
 #else
 
@@ -79,7 +83,7 @@ SCHED_FEAT(TTWU_QUEUE, false)
  * Queue remote wakeups on the target CPU and process them
  * using the scheduler IPI. Reduces rq->lock contention/bounces.
  */
-SCHED_FEAT(TTWU_QUEUE, !IS_ENABLED(CONFIG_SCHED_CASS))
+SCHED_FEAT(TTWU_QUEUE, true)
 #endif
 
 /*
