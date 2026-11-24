@@ -47,7 +47,7 @@ void cass_cpu_util(struct cass_cpu_cand *c, int this_cpu, bool sync)
 	/* Get this CPU's utilization from CFS tasks */
 	c->util = READ_ONCE(cfs_rq->avg.util_avg);
 	if (sched_feat(UTIL_EST)) {
-		est = READ_ONCE(cfs_rq->avg.util_est.enqueued);
+		est = READ_ONCE(cfs_rq->avg.util_est);
 		if (est > c->util) {
 			/* Don't deduct @current's util from estimated util */
 			sync = false;
@@ -59,7 +59,7 @@ void cass_cpu_util(struct cass_cpu_cand *c, int this_cpu, bool sync)
 	 * Deduct @current's util from this CPU if this is a sync wake, unless
 	 * @current is an RT task; RT tasks don't have per-entity load tracking.
 	 */
-	if (sync && c->cpu == this_cpu && !rt_task(current))
+	if (sync && c->cpu == this_cpu && current->sched_class == &fair_sched_class)
 		c->util -= min(c->util, task_util(current));
 
 	/* Get the utilization of everything other than CFS tasks */
@@ -159,7 +159,8 @@ done:
 static int cass_best_cpu(struct task_struct *p, int prev_cpu, bool sync, bool rt)
 {
 	/* Initialize @best such that @best always has a valid CPU at the end */
-	struct cass_cpu_cand cands[2], *best = cands;
+	struct cass_cpu_cand cands[2] = { { .cpu = prev_cpu }, {} };
+	struct cass_cpu_cand *best = cands;
 	int this_cpu = raw_smp_processor_id();
 	unsigned long p_util, uc_min;
 	bool has_idle = false;
@@ -188,12 +189,14 @@ static int cass_best_cpu(struct task_struct *p, int prev_cpu, bool sync, bool rt
 		struct cass_cpu_cand *curr = &cands[cidx];
 		struct cpuidle_state *idle_state;
 		struct rq *rq = cpu_rq(cpu);
+		unsigned long pressure;
 
 		/* Get the original, maximum _possible_ capacity of this CPU */
-		curr->cap_orig = arch_scale_cpu_capacity(cpu);
+		curr->cap_orig = max(arch_scale_cpu_capacity(cpu), 1UL);
 
 		/* Get the _current_, throttled maximum capacity of this CPU */
-		curr->cap_max = curr->cap_orig - thermal_load_avg(rq);
+		pressure = max(hw_load_avg(rq), cpufreq_get_pressure(cpu));
+		curr->cap_max = curr->cap_orig - min(pressure, curr->cap_orig - 1);
 
 		/* Prefer the CPU that more closely meets the uclamp minimum */
 		if (curr->cap_max < uc_min && curr->cap_max < best->cap_max)
