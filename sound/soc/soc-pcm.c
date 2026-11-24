@@ -1358,10 +1358,15 @@ static int dpcm_be_connect(struct snd_soc_pcm_runtime *fe,
 			"%s: %s is atomic but %s is nonatomic, invalid configuration\n",
 				   __func__, fe->dai_link->name, be->dai_link->name);
 
-	if (fe_substream->pcm->nonatomic && !be_substream->pcm->nonatomic) {
-		dev_dbg(be->dev, "FE is nonatomic but BE is not, forcing BE as nonatomic\n");
-		be_substream->pcm->nonatomic = 1;
-	}
+	/*
+	 * Do not mutate an atomic BE to nonatomic when a nonatomic FE (such as
+	 * QTI MMAP NOIRQ MultiMedia16) connects to it: atomic BEs use a nested
+	 * spinlock in dpcm_be_dai_trigger(), which is safe under both nonatomic
+	 * (mutex) and atomic (spinlock) FE triggers, whereas permanently
+	 * flipping be_substream->pcm->nonatomic to 1 breaks all subsequent
+	 * atomic FEs (Direct PCM, voice calls, deep-buffer, low-latency) on
+	 * that BE until reboot.
+	 */
 
 	dpcm = kzalloc(sizeof(struct snd_soc_dpcm), GFP_KERNEL);
 	if (!dpcm)
