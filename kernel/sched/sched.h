@@ -3033,6 +3033,10 @@ static inline unsigned long arch_scale_min_freq_capacity(int cpu)
 }
 #endif
 
+#ifdef CONFIG_SCHED_CASS
+int cass_select_task_rq_rt(struct task_struct *p, int prev_cpu, int wake_flags);
+#endif
+
 /*
  * In double_lock_balance()/double_rq_lock(), we use raw_spin_rq_lock() to
  * acquire rq lock instead of rq_lock(). So at the end of these two functions
