@@ -38,3 +38,13 @@ CONFIG_NL80211_TESTMODE=y
 
 CONFIG_INTERCONNECT_FOGOS_LEGACY=y
 CONFIG_QCOM_CX_IPEAK=y
+
+# Match 6.1 hot-path configuration by disabling unused scheduler topologies
+# and debug/hardening instrumentation on Blair (SM6375).
+# CONFIG_SCHED_SMT is not set
+# CONFIG_SCHED_CLUSTER is not set
+# CONFIG_SCHED_CLASS_EXT is not set
+# CONFIG_SCHED_PROXY_EXEC is not set
+# CONFIG_TASK_DELAY_ACCT is not set
+# CONFIG_HARDENED_USERCOPY_DEFAULT_ON is not set
+# CONFIG_DAMON is not set
