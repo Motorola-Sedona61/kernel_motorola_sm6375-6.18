@@ -1439,6 +1439,20 @@ static int cpufreq_policy_online(struct cpufreq_policy *policy,
 		if (ret)
 			goto out_offline_policy;
 
+		/*
+		 * Enable software boost frequencies before CPUFREQ_CREATE_POLICY
+		 * so arch_topology records the true max OPP in capacity_freq_ref.
+		 */
+		if (cpufreq_driver->set_boost == cpufreq_boost_set_sw &&
+		    policy->boost_supported && cpufreq_boost_enabled()) {
+			policy->boost_enabled = true;
+			ret = cpufreq_frequency_table_cpuinfo(policy);
+			if (ret) {
+				policy->boost_enabled = false;
+				goto out_offline_policy;
+			}
+		}
+
 		/* related_cpus should at least include policy->cpus. */
 		cpumask_copy(policy->related_cpus, policy->cpus);
 	}
