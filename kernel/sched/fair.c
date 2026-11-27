@@ -1183,6 +1183,32 @@ int sched_update_scaling(void)
 
 static void clear_buddies(struct cfs_rq *cfs_rq, struct sched_entity *se);
 
+static inline bool task_is_latency_sensitive(struct task_struct *p)
+{
+	if (unlikely(p->policy != SCHED_NORMAL))
+		return false;
+
+	if (p->static_prio > NICE_TO_PRIO(0))
+		return false;
+
+#ifdef CONFIG_UCLAMP_TASK_GROUP
+	if (READ_ONCE(task_group(p)->latency_sensitive))
+		return true;
+#endif
+
+	return uclamp_eff_value(p, UCLAMP_MIN) > 0;
+}
+
+static inline u64 se_default_slice(struct sched_entity *se)
+{
+	u64 slice = sysctl_sched_base_slice;
+
+	if (entity_is_task(se) && task_is_latency_sensitive(task_of(se)))
+		slice = max_t(u64, slice >> 2, NSEC_PER_MSEC / 10);
+
+	return slice;
+}
+
 /*
  * XXX: strictly: vd_i += N*r_i/w_i such that: vd_i > ve_i
  * this is probably good enough.
@@ -1201,10 +1227,10 @@ static bool update_deadline(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	/*
 	 * For EEVDF the virtual time slope is determined by w_i (iow.
 	 * nice) while the request time r_i is determined by
-	 * sysctl_sched_base_slice.
+	 * sysctl_sched_base_slice (or shorter for latency-sensitive tasks).
 	 */
 	if (!se->custom_slice)
-		se->slice = sysctl_sched_base_slice;
+		se->slice = se_default_slice(se);
 
 	/*
 	 * EEVDF: vd_i = ve_i + r_i / w_i
@@ -5407,7 +5433,7 @@ void __setparam_fair(struct task_struct *p, const struct sched_attr *attr)
 				      NSEC_PER_MSEC*100); /* HZ=100  / 10 */
 	} else {
 		se->custom_slice = 0;
-		se->slice = sysctl_sched_base_slice;
+		se->slice = se_default_slice(se);
 	}
 }
 
@@ -5418,7 +5444,7 @@ place_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 	s64 lag = 0;
 
 	if (!se->custom_slice)
-		se->slice = sysctl_sched_base_slice;
+		se->slice = se_default_slice(se);
 	vslice = calc_delta_fair(se->slice, se);
 
 	/*
@@ -7185,6 +7211,16 @@ requeue_delayed_entity(struct sched_entity *se)
 		}
 	}
 
+	if (!se->custom_slice) {
+		u64 new_slice = se_default_slice(se);
+
+		if (se->slice != new_slice) {
+			se->slice = new_slice;
+			if (se != cfs_rq->curr)
+				min_vruntime_cb_propagate(&se->run_node, NULL);
+		}
+	}
+
 	update_load_avg(cfs_rq, se, 0);
 	clear_delayed(se);
 }
@@ -7221,6 +7257,16 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 	if (flags & ENQUEUE_DELAYED) {
 		requeue_delayed_entity(se);
+		slice = cfs_rq_min_slice(cfs_rq_of(se));
+		for (se = parent_entity(se); se; se = parent_entity(se)) {
+			if (se->slice == slice)
+				break;
+			cfs_rq = cfs_rq_of(se);
+			se->slice = slice;
+			if (se != cfs_rq->curr)
+				min_vruntime_cb_propagate(&se->run_node, NULL);
+			slice = cfs_rq_min_slice(cfs_rq);
+		}
 		return;
 	}
 
@@ -9089,10 +9135,11 @@ preempt_sync(struct rq *rq, int wake_flags,
 
 	/*
 	 * As WF_SYNC is not strictly obeyed, allow some runtime for batch
-	 * wakeups to be issued.
+	 * wakeups to be issued, and defer eligibility verification to
+	 * pick_eevdf() via PREEMPT_WAKEUP_SHORT.
 	 */
 	if (entity_before(pse, se) && delta >= threshold)
-		return PREEMPT_WAKEUP_RESCHED;
+		return PREEMPT_WAKEUP_SHORT;
 
 	return PREEMPT_WAKEUP_NONE;
 }
